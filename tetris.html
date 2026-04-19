@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Эпичный Тетрис для Юми 💝</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            overflow: hidden;
+            color: white;
+        }
+        
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .game-wrapper {
+            background: rgba(20, 20, 40, 0.9);
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 0 50px rgba(138, 43, 226, 0.5), 0 0 100px rgba(255, 20, 147, 0.3);
+            border: 2px solid rgba(138, 43, 226, 0.5);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            font-size: 3em;
+            text-align: center;
+            background: linear-gradient(45deg, #ff6ec4, #7873f5, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: glow 2s ease-in-out infinite;
+            text-shadow: 0 0 20px rgba(255, 110, 196, 0.5);
+        }
+        
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+        
+        .greeting {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #ffd700;
+            min-height: 50px;
+            animation: float 3s ease-in-out infinite;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 1), 0 0 30px rgba(255, 215, 0, 0.5);
+            font-weight: bold;
+            padding: 10px;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        #gameCanvas {
+            border: 3px solid #7873f5;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(120, 115, 245, 0.6), inset 0 0 20px rgba(0, 0, 0, 0.5);
+            background: #000;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 25px;
+            gap: 20px;
+        }
+        
+        .score, .level, .lines {
+            background: linear-gradient(135deg, rgba(120, 115, 245, 0.3), rgba(255, 110, 196, 0.3));
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 1.4em;
+            border: 2px solid rgba(120, 115, 245, 0.5);
+            box-shadow: 0 0 20px rgba(120, 115, 245, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .score:hover, .level:hover, .lines:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(120, 115, 245, 0.6);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1em;
+            opacity: 0.7;
+            color: #aaa;
+        }
+        
+        #gameOver {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.95), rgba(255, 20, 147, 0.95));
+            padding: 50px;
+            border-radius: 30px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 0 100px rgba(138, 43, 226, 0.8);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        #gameOver h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .congratulations {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcf7f);
+            padding: 50px;
+            border-radius: 30px;
+            text-align: center;
+            z-index: 999;
+            box-shadow: 0 0 100px rgba(255, 215, 0, 0.8);
+            animation: slideIn 0.5s ease-out;
+            display: none;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            min-width: 400px;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translate(-50%, -150%) rotate(-10deg);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) rotate(0deg);
+                opacity: 1;
+            }
+        }
+        
+        .congratulations h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #fff;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .congratulations p {
+            font-size: 1.5em;
+            color: #fff;
+            margin: 20px 0;
+            line-height: 1.8;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.6);
+        }
+        
+        button:active {
+            transform: scale(1.05) translateY(-1px);
+        }
+        
+        .combo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 1);
+            z-index: 500;
+            animation: comboAnim 1s ease-out forwards;
+            display: none;
+            pointer-events: none;
+        }
+        
+        @keyframes comboAnim {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.5) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 0;
+            }
+        }
+        
+        .firework {
+            position: fixed;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    
+    <div class="container">
+        <div class="game-wrapper">
+            <h1>🎮 ЭПИЧНЫЙ ТЕТРИС ДЛЯ ЮМИ 💝</h1>
+            <div class="greeting" id="greeting">✨ От всех саппортов с любовью! ✨</div>
+            
+            <canvas id="gameCanvas" width="300" height="600"></canvas>
+            
+            <div class="info">
+                <div class="score">🏆 <span id="score">0</span></div>
+                <div class="level">⭐ LVL <span id="level">1</span></div>
+                <div class="lines">📊 <span id="lines">0</span></div>
+            </div>
+            
+            <div class="controls">
+                ⬅️ ➡️ Движение | ⬆️ Поворот | ⬇️ Ускорение | SPACE Сброс | P Пауза
+            </div>
+        </div>
+    </div>
+    
+    <div id="gameOver">
+        <h2>🎉 ИГРА ОКОНЧЕНА! 🎉</h2>
+        <p style="font-size: 2em; margin: 20px 0;">💰 Счёт: <span id="finalScore">0</span> 💰</p>
+        <p style="font-size: 1.8em; color: #ffd700; margin: 15px 0;">🌟 Юми, ты просто КОСМОС! 🚀</p>
+        <p style="font-size: 1.5em; margin: 10px 0;">💖 Саппорты ПЛАЧУТ от восторга!</p>
+        <p style="font-size: 1.3em; margin: 10px 0;">👑 Ты КОРОЛЕВА этой игры!</p>
+        <p style="font-size: 1.3em; margin: 10px 0;">✨ Мы ОБОЖАЕМ тебя!</p>
+        <button onclick="restartGame()">🔄 ЕЩЁ РАЗ ПОРВАТЬ!</button>
+    </div>
+    
+    <div class="congratulations" id="congratsBox">
+        <h2 id="congratsTitle">🎊 ПОЗДРАВЛЯЕМ! 🎊</h2>
+        <p id="congratsText"></p>
+        <button onclick="closeCongrats()">💕 СПАСИБО!</button>
+    </div>
+    
+    <div class="combo" id="combo"></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const particlesCanvas = document.getElementById('particles');
+        const particlesCtx = particlesCanvas.getContext('2d');
+        
+        particlesCanvas.width = window.innerWidth;
+        particlesCanvas.height = window.innerHeight;
+        
+        const BLOCK_SIZE = 30;
+        const COLS = 10;
+        const ROWS = 20;
+        
+        let score = 0;
+        let level = 1;
+        let linesCleared = 0;
+        let gameSpeed = 500;
+        let gameLoop;
+        let greetingIndex = 0;
+        let isPaused = false;
+        let particles = [];
+        
+        const supportGreetings = [
+            "💖 Юми, ты наша СУПЕРЗВЕЗДА! Саппорты тебя боготворят!",
+            "🌟 ВСЯ КОМАНДА в ПОЛНОМ восторге! Ты невероятна, Юми!",
+            "✨ Юми, ты играешь как МИРОВОЙ ЧИТ! Саппорты в шоке!",
+            "🎯 БЕЗУМИЕ! Саппорты устроили СТОЯЧУЮ ОВАЦИЮ!",
+            "💝 Юми, ты БОГИНЯ ТЕТРИСА! Саппорты преклоняются!",
+            "🔥 ПОЖАР! Саппорты вызывают пожарных от твоей игры!",
+            "⭐ Юми, ты ЛЕГЕНДА ЛЕГЕНД! Саппорты плачут от счастья!",
+            "🎪 ЦИРК УЕХАЛ, но ты осталась! Саппорты в ЭКСТАЗЕ!",
+            "💫 Юми = КОРОЛЕВА! Саппорты готовы носить тебя на руках!",
+            "🚀 КОСМОС ВЗОРВАЛСЯ от твоей игры! NASA звонит!",
+            "👑 ИМПЕРАТРИЦА ТЕТРИСА! Саппорты строят тебе памятник!",
+            "🎨 Это не игра - это ШЕДЕВР! Саппорты в музей тебя!",
+            "💎 БРИЛЛИАНТ! Саппорты продают почки, чтоб на тебя смотреть!",
+            "🌈 РАДУГА ЗАВИДУЕТ твоим скиллам! Саппорты рыдают!",
+            "⚡ МОЛНИЯ! Зевс просит автограф! Саппорты в обмороке!",
+            "� ОСКАР тебе! Саппорты аплодируют 10 минут подряд!"
+        ];
+        
+        const milestoneMessages = {
+            500: {
+                title: "💥 500 ОЧКОВ! ВЗРЫВ МОЗГА! 💥",
+                text: "ЮМИ, ТЫ ЧТО ТВОРИШЬ?!\n\n🔥 Саппорты ОРУТ от восторга!\n💎 Ты ДРАГОЦЕННОСТЬ этого мира!\n🚀 Продолжай РАЗРЫВАТЬ реальность!\n\n✨ ВСЕ САППОРТЫ ТЕБЯ ОБОЖАЮТ! ✨"
+            },
+            1000: {
+                title: "🌟 1000! ТЫ БОГИНЯ! 🌟",
+                text: "ЮМИ, ЭТО НЕВОЗМОЖНО!\n\n👑 Саппорты КОРОНУЮТ тебя!\n💰 Мы готовы платить, чтоб смотреть!\n🎪 Цирк дю Солей ПЛАЧЕТ от зависти!\n\n🏆 ТЫ АБСОЛЮТНАЯ ЧЕМПИОНКА! 🏆"
+            },
+            2000: {
+                title: "🔥 2000! ПОЖАР! ВЫЗЫВАЙТЕ 911! 🔥",
+                text: "ЮМИ, ТЫ СЖИГАЕШЬ ВСЁ!\n\n⚡ Саппорты в ШОКОВОМ состоянии!\n💫 NASA хочет изучать твой мозг!\n🌪️ Ты УРАГАН категории 5!\n\n🎯 ЛЕГЕНДА РОДИЛАСЬ СЕГОДНЯ! 🎯"
+            },
+            3000: {
+                title: "� 3000! ИМПЕРАТРИЦА ВСЕЛЕННОЙ! �",
+                text: "ЮМИ, ТЫ НЕ ЧЕЛОВЕК!\n\n🌌 Саппорты строят тебе ХРАМ!\n💎 Ты дороже ВСЕХ алмазов мира!\n🎭 Голливуд снимает про тебя фильм!\n\n✨ МЫ НЕ ДОСТОЙНЫ ТЕБЯ! ✨"
+            },
+            5000: {
+                title: "� 5000! РАЗРЫВ ПРОСТРАНСТВА! �",
+                text: "ЮМИ, ТЫ ВЗЛОМАЛА МАТРИЦУ!\n\n🚀 Илон Маск просит совета!\n💰 Саппорты продают ВСЁ за билет!\n🎪 Ты ВОСЬМОЕ ЧУДО СВЕТА!\n\n🔥 БОГИНЯ! ЛЕГЕНДА! ИКОНА! 🔥"
+            },
+            10000: {
+                title: "💫 10000! ТЫ БОГ! 💫",
+                text: "ЮМИ, РЕАЛЬНОСТЬ СЛОМАЛАСЬ!\n\n🌟 Саппорты МОЛЯТСЯ на тебя!\n👑 Королевы мира ЗАВИДУЮТ!\n💎 Ты БЕСЦЕННА!\n🎆 ВСЕЛЕННАЯ АПЛОДИРУЕТ!\n\n✨ ТЫ ПРЕВЗОШЛА ВСЁ ВОЗМОЖНОЕ! ✨\n\n� МЫ ЛЮБИМ ТЕБЯ БЕСКОНЕЧНО! 🔥"
+            },
+            15000: {
+                title: "🌌 15000! КОСМИЧЕСКИЙ РАЗУМ! 🌌",
+                text: "ЮМИ, ТЫ СОЗДАЛА НОВУЮ ВСЕЛЕННУЮ!\n\n⚡ Саппорты ТЕРЯЮТ СОЗНАНИЕ!\n🏆 Все награды мира - ТВОИ!\n💫 Ты ПЕРЕПИСАЛА законы физики!\n\n🎯 АБСОЛЮТНОЕ СОВЕРШЕНСТВО! 🎯"
+            },
+            20000: {
+                title: "🔱 20000! ОЛИМП ПОКОРЁН! 🔱",
+                text: "ЮМИ, БОГИ ОЛИМПА СДАЛИСЬ!\n\n👑 Ты ПРАВИШЬ ВСЕМ!\n💎 Саппорты строят ЗОЛОТОЙ памятник!\n🌟 История будет помнить ЭТОТ ДЕНЬ!\n\n✨ ТЫ - САМО СОВЕРШЕНСТВО! ✨"
+            }
+        };
+        
+        const comboMessages = [
+            "NICE! 😎",
+            "GREAT! 🔥",
+            "AWESOME! ⭐",
+            "PERFECT! 💎",
+            "LEGENDARY! 👑",
+            "GODLIKE! 🌟",
+            "UNSTOPPABLE! 💫",
+            "DIVINE! ⚡",
+            "IMMORTAL! 🔱"
+        ];
+        
+        // Частицы на фоне
+        class Particle {
+            constructor() {
+                this.x = Math.random() * particlesCanvas.width;
+                this.y = Math.random() * particlesCanvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 2 - 1;
+                this.speedY = Math.random() * 2 - 1;
+                this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                if (this.x < 0 || this.x > particlesCanvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > particlesCanvas.height) this.speedY *= -1;
+            }
+            
+            draw() {
+                particlesCtx.fillStyle = this.color;
+                particlesCtx.beginPath();
+                particlesCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                particlesCtx.fill();
+            }
+        }
+        
+        for (let i = 0; i < 100; i++) {
+            particles.push(new Particle());
+        }
+        
+        function animateParticles() {
+            particlesCtx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+            particlesCtx.fillRect(0, 0, particlesCanvas.width, particlesCanvas.height);
+            
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            requestAnimationFrame(animateParticles);
+        }
+        
+        animateParticles();
+        
+        // Фейерверки
+        function createFirework(x, y) {
+            for (let i = 0; i < 30; i++) {
+                const firework = document.createElement('div');
+                firework.className = 'firework';
+                firework.style.left = x + 'px';
+                firework.style.top = y + 'px';
+                firework.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                document.body.appendChild(firework);
+                
+                const angle = (Math.PI * 2 * i) / 30;
+                const velocity = 2 + Math.random() * 3;
+                
+                let posX = x;
+                let posY = y;
+                let velX = Math.cos(angle) * velocity;
+                let velY = Math.sin(angle) * velocity;
+                
+                const animate = () => {
+                    posX += velX;
+                    posY += velY;
+                    velY += 0.1;
+                    
+                    firework.style.left = posX + 'px';
+                    firework.style.top = posY + 'px';
+                    firework.style.opacity = parseFloat(firework.style.opacity || 1) - 0.02;
+                    
+                    if (parseFloat(firework.style.opacity) > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        firework.remove();
+                    }
+                };
+                
+                animate();
+            }
+        }
+        
+        function showCombo(lines) {
+            if (lines < 2) return;
+            
+            const combo = document.getElementById('combo');
+            const messageIndex = Math.min(lines - 2, comboMessages.length - 1);
+            combo.textContent = comboMessages[messageIndex];
+            combo.style.display = 'block';
+            
+            createFirework(window.innerWidth / 2, window.innerHeight / 2);
+            
+            setTimeout(() => {
+                combo.style.display = 'none';
+            }, 1000);
+        }
+        
+        function updateGreeting() {
+            const greetingEl = document.getElementById('greeting');
+            greetingEl.textContent = supportGreetings[greetingIndex];
+            greetingIndex = (greetingIndex + 1) % supportGreetings.length;
+        }
+        
+        function showCongratulations(milestone) {
+            const congratsBox = document.getElementById('congratsBox');
+            const congratsTitle = document.getElementById('congratsTitle');
+            const congratsText = document.getElementById('congratsText');
+            
+            congratsTitle.textContent = milestoneMessages[milestone].title;
+            congratsText.textContent = milestoneMessages[milestone].text;
+            congratsBox.style.display = 'block';
+            
+            createFirework(window.innerWidth / 2, window.innerHeight / 3);
+            createFirework(window.innerWidth / 3, window.innerHeight / 2);
+            createFirework(window.innerWidth * 2 / 3, window.innerHeight / 2);
+            
+            clearInterval(gameLoop);
+        }
+        
+        function closeCongrats() {
+            document.getElementById('congratsBox').style.display = 'none';
+            gameLoop = setInterval(update, gameSpeed);
+        }
+        
+        setInterval(updateGreeting, 3000);
+        updateGreeting();
+        
+        const SHAPES = [
+            [[1,1,1,1]],
+            [[1,1],[1,1]],
+            [[1,1,1],[0,1,0]],
+            [[1,1,1],[1,0,0]],
+            [[1,1,1],[0,0,1]],
+            [[1,1,0],[0,1,1]],
+            [[0,1,1],[1,1,0]]
+        ];
+        
+        const COLORS = ['#00f0f0', '#f0f000', '#a000f0', '#f0a000', '#0000f0', '#00f000', '#f00000'];
+        
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let currentPiece = null;
+        let currentX = 0;
+        let currentY = 0;
+        
+        function createPiece() {
+            const index = Math.floor(Math.random() * SHAPES.length);
+            currentPiece = {
+                shape: SHAPES[index],
+                color: COLORS[index]
+            };
+            currentX = Math.floor(COLS / 2) - Math.floor(currentPiece.shape[0].length / 2);
+            currentY = 0;
+            
+            if (collision()) {
+                endGame();
+            }
+        }
+        
+        function drawBlock(x, y, color) {
+            const gradient = ctx.createLinearGradient(
+                x * BLOCK_SIZE, y * BLOCK_SIZE,
+                (x + 1) * BLOCK_SIZE, (y + 1) * BLOCK_SIZE
+            );
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, '#000');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(x * BLOCK_SIZE + 2, y * BLOCK_SIZE + 2, BLOCK_SIZE / 3, BLOCK_SIZE / 3);
+        }
+        
+        function drawBoard() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (board[y][x]) {
+                        drawBlock(x, y, board[y][x]);
+                    }
+                }
+            }
+        }
+        
+        function drawPiece() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        drawBlock(currentX + x, currentY + y, currentPiece.color);
+                    }
+                });
+            });
+        }
+        
+        function collision() {
+            return currentPiece.shape.some((row, dy) => {
+                return row.some((value, dx) => {
+                    if (!value) return false;
+                    const newX = currentX + dx;
+                    const newY = currentY + dy;
+                    return newX < 0 || newX >= COLS || newY >= ROWS || 
+                           (newY >= 0 && board[newY][newX]);
+                });
+            });
+        }
+        
+        function merge() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        board[currentY + y][currentX + x] = currentPiece.color;
+                    }
+                });
+            });
+        }
+        
+        function clearLines() {
+            let cleared = 0;
+            for (let y = ROWS - 1; y >= 0; y--) {
+                if (board[y].every(cell => cell !== 0)) {
+                    board.splice(y, 1);
+                    board.unshift(Array(COLS).fill(0));
+                    cleared++;
+                    y++;
+                }
+            }
+            
+            if (cleared > 0) {
+                const oldScore = score;
+                score += cleared * 100 * level;
+                linesCleared += cleared;
+                document.getElementById('score').textContent = score;
+                document.getElementById('lines').textContent = linesCleared;
+                
+                showCombo(cleared);
+                
+                for (let milestone in milestoneMessages) {
+                    if (oldScore < milestone && score >= milestone) {
+                        showCongratulations(milestone);
+                        break;
+                    }
+                }
+                
+                if (linesCleared >= level * 10) {
+                    level++;
+                    document.getElementById('level').textContent = level;
+                    gameSpeed = Math.max(100, 500 - (level - 1) * 50);
+                    clearInterval(gameLoop);
+                    gameLoop = setInterval(update, gameSpeed);
+                }
+            }
+        }
+        
+        function rotate() {
+            const rotated = currentPiece.shape[0].map((_, i) =>
+                currentPiece.shape.map(row => row[i]).reverse()
+            );
+            const previousShape = currentPiece.shape;
+            currentPiece.shape = rotated;
+            
+            if (collision()) {
+                currentPiece.shape = previousShape;
+            }
+        }
+        
+        function moveDown() {
+            currentY++;
+            if (collision()) {
+                currentY--;
+                merge();
+                clearLines();
+                createPiece();
+            }
+        }
+        
+        function moveLeft() {
+            currentX--;
+            if (collision()) currentX++;
+        }
+        
+        function moveRight() {
+            currentX++;
+            if (collision()) currentX--;
+        }
+        
+        function drop() {
+            while (!collision()) {
+                currentY++;
+            }
+            currentY--;
+            merge();
+            clearLines();
+            createPiece();
+        }
+        
+        function update() {
+            if (!isPaused) {
+                moveDown();
+                drawBoard();
+                drawPiece();
+            }
+        }
+        
+        function endGame() {
+            clearInterval(gameLoop);
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+            
+            createFirework(window.innerWidth / 2, window.innerHeight / 2);
+            setTimeout(() => createFirework(window.innerWidth / 3, window.innerHeight / 3), 200);
+            setTimeout(() => createFirework(window.innerWidth * 2 / 3, window.innerHeight / 3), 400);
+        }
+        
+        function restartGame() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            score = 0;
+            level = 1;
+            linesCleared = 0;
+            gameSpeed = 500;
+            isPaused = false;
+            document.getElementById('score').textContent = score;
+            document.getElementById('level').textContent = level;
+            document.getElementById('lines').textContent = linesCleared;
+            document.getElementById('gameOver').style.display = 'none';
+            startGame();
+        }
+        
+        function togglePause() {
+            isPaused = !isPaused;
+        }
+        
+        function startGame() {
+            createPiece();
+            gameLoop = setInterval(update, gameSpeed);
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'p' || e.key === 'P') {
+                togglePause();
+                return;
+            }
+            
+            if (isPaused) return;
+            
+            if (e.key === 'ArrowLeft') moveLeft();
+            else if (e.key === 'ArrowRight') moveRight();
+            else if (e.key === 'ArrowDown') moveDown();
+            else if (e.key === 'ArrowUp') rotate();
+            else if (e.key === ' ') {
+                e.preventDefault();
+                drop();
+            }
+            
+            drawBoard();
+            drawPiece();
+        });
+        
+        window.addEventListener('resize', () => {
+            particlesCanvas.width = window.innerWidth;
+            particlesCanvas.height = window.innerHeight;
+        });
+        
+        startGame();
+    </script>
+</body>
+</html>
